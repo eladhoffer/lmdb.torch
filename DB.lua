@@ -31,7 +31,7 @@ function env:open(...)
     {arg='WRITEMAP', type='boolean', help='', default = false},
     {arg='MAPASYNC', type='boolean', help='', default = false},
     {arg='NOSYNC', type='boolean', help='', default = false},
-    {arg='NOTLS', type='boolean', help='', default = true},
+    {arg='NOTLS', type='boolean', help='', default = false},
     {arg='NOLOCK', type='boolean', help='', default = false},
     {arg='Mode', type='number', help='', default = 0664},
     {arg='MaxDBs', type='number', help='', default = 1},
@@ -59,6 +59,12 @@ end
 
 function env:txn(...)
     return lmdb.txn(self,...)
+end
+
+function env:reader_check()
+    local num = ffi.new('int [1]')
+    lmdb.errcheck('mdb_reader_check', self.mdb_env[0], num)
+    return tonumber(num[0])
 end
 
 function env:stat()
@@ -123,7 +129,7 @@ function txn:dbi_open(name, flags)
 end
 
 function txn:dbi_close()
-    return lmdb.errcheck('mdb_dbi_close', self.mdb_dbi)
+    return lmdb.errcheck('mdb_dbi_close', self.mdb_dbi[0])
 end
 
 function txn:commit()
@@ -148,7 +154,7 @@ function txn:put(key, data, flag)
     local flag = flag or 0
     local mdb_key = lmdb.MDB_val(key)
     local mdb_data = lmdb.MDB_val(data)
-    lmdb.errcheck('mdb_put', self.mdb_txn[0], self.mdb_dbi[0], mdb_key,mdb_data, flag)
+    return lmdb.errcheck('mdb_put', self.mdb_txn[0], self.mdb_dbi[0], mdb_key,mdb_data, flag)
 end
 
 function txn:cursor()
@@ -158,11 +164,10 @@ end
 function txn:get(key)
     local mdb_key = lmdb.MDB_val(key)
     local mdb_data = ffi.new('MDB_val[1]')
-    local result = lmdb.errcheck('mdb_get', self.mdb_txn[0], self.mdb_dbi[0], mdb_key,mdb_data)
-    if result == 0 then
-        return lmdb.from_MDB_val(mdb_data)
-    else 
+    if lmdb.errcheck('mdb_get', self.mdb_txn[0], self.mdb_dbi[0], mdb_key,mdb_data) == nil then
         return nil
+    else
+        return lmdb.from_MDB_val(mdb_data)
     end
 end
 
@@ -177,7 +182,7 @@ function cursor:__init(txn_obj)
     end
     ffi.gc(self.mdb_cursor, destroy_cursor )
 
-    lmdb.errcheck('mdb_cursor_open',txn_obj.mdb_txn[0], txn_obj.mdb_dbi[0], self.mdb_cursor)
+    return lmdb.errcheck('mdb_cursor_open',txn_obj.mdb_txn[0], txn_obj.mdb_dbi[0], self.mdb_cursor)
 end
 
 function cursor:get(op)
@@ -185,9 +190,11 @@ function cursor:get(op)
     local mdb_key = ffi.new('MDB_val[1]')
     local mdb_data = ffi.new('MDB_val[1]')
 
-    lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], mdb_key, mdb_data, op)
-
-    return lmdb.from_MDB_val(mdb_data)
+    if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], mdb_key, mdb_data, op) == nil then
+        return nil
+    else
+        return lmdb.from_MDB_val(mdb_data)
+    end
 end
 
 function cursor:put(key, data, flag)

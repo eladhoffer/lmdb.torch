@@ -7,13 +7,15 @@ local ffi = require 'ffi'
 local C = lmdb.C
 
 lmdb.verbose = true
+
 lmdb.serialize = torch.serialize
 lmdb.deserialize = torch.deserialize
 
 local errcheck = function(f, ...)
     local status = C[f](...)
-    if status ~= C.MDB_SUCCESS and lmdb.verbose then
+    if status and status ~= C.MDB_SUCCESS and lmdb.verbose then
         print("Error in LMDB: ", ffi.string(C.mdb_strerror(status)))
+        return nil
     end
     return status
 end

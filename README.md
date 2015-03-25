@@ -1,15 +1,7 @@
-# lmdb.torch
-##LMDB for Torch
+#LMDB for Torch
 Uses ffi to wrap LMDB functions, and Torch to serialize/deserialize objects (can be replaced by changing lmdb.[de]serialize).
 
-Available functions:
-require 'xlua'
-require 'dok'
-local C = lmdb.C
-local ffi = require 'ffi'
-
-
-
+##Available functions:
 
 ###lmdb.env()
 

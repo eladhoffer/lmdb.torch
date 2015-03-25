@@ -1,5 +1,5 @@
 #LMDB for Torch
-Uses ffi to wrap LMDB functions, and Torch to serialize/deserialize objects (can be replaced by changing lmdb.[de]serialize).
+Uses ffi to wrap LMDB (http://symas.com/mdb/) functions, and Torch to serialize/deserialize objects (can be replaced by changing lmdb.[de]serialize).
 
 ##Available functions:
 
@@ -7,7 +7,7 @@ Uses ffi to wrap LMDB functions, and Torch to serialize/deserialize objects (can
 
 ```lua
 open{
-    Path = string                       -- Name of lmdb database.
+    Path = string                       -- Path of lmdb database
     [MapSize = number]                  -- Size of map  [default = 1099511627776]
     [NOSUBDIR = boolean]                --   [default = false]
     [NOMETASYNC = boolean]              --   [default = false]

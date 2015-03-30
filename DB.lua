@@ -8,7 +8,7 @@ local ffi = require 'ffi'
 ---------------------------------------------env-------------------------------------------
 local env = torch.class('lmdb.env')
 
-function env:__init()
+function env:__init(vals)
     self.mdb_env = ffi.new('MDB_env *[1]')
     lmdb.errcheck('mdb_env_create',self.mdb_env)
     local function destroy_env(x)
@@ -16,6 +16,9 @@ function env:__init()
     end
 --    self.mdb_env = self.mdb_env[0]
     ffi.gc(self.mdb_env, destroy_env )
+    if vals then
+        self:open(vals)
+    end
 end
 
 function env:open(...)
@@ -152,7 +155,7 @@ end
 
 function txn:put(key, data, flag)
     local flag = flag or 0
-    local mdb_key = lmdb.MDB_val(key)
+    local mdb_key = lmdb.MDB_val(key, true) --Keys are always strings
     local mdb_data = lmdb.MDB_val(data)
     return lmdb.errcheck('mdb_put', self.mdb_txn[0], self.mdb_dbi[0], mdb_key,mdb_data, flag)
 end
@@ -162,7 +165,7 @@ function txn:cursor()
 end
 
 function txn:get(key)
-    local mdb_key = lmdb.MDB_val(key)
+    local mdb_key = lmdb.MDB_val(key, true)
     local mdb_data = ffi.new('MDB_val[1]')
     if lmdb.errcheck('mdb_get', self.mdb_txn[0], self.mdb_dbi[0], mdb_key,mdb_data) == nil then
         return nil
@@ -182,24 +185,47 @@ function cursor:__init(txn_obj)
     end
     ffi.gc(self.mdb_cursor, destroy_cursor )
 
-    return lmdb.errcheck('mdb_cursor_open',txn_obj.mdb_txn[0], txn_obj.mdb_dbi[0], self.mdb_cursor)
+    lmdb.errcheck('mdb_cursor_open',txn_obj.mdb_txn[0], txn_obj.mdb_dbi[0], self.mdb_cursor)
+    self:first()
 end
-
 function cursor:get(op)
-    local op = op or lmdb.C.MDB_NEXT
+    local op = op or lmdb.C.MDB_GET_CURRENT
     local mdb_key = ffi.new('MDB_val[1]')
     local mdb_data = ffi.new('MDB_val[1]')
 
     if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], mdb_key, mdb_data, op) == nil then
         return nil
     else
-        return lmdb.from_MDB_val(mdb_data)
+        return lmdb.from_MDB_val(mdb_key, true), lmdb.from_MDB_val(mdb_data)
     end
 end
 
+
+function cursor:set(key)
+    local op  = lmdb.C.MDB_SET
+    local mdb_key = lmdb.MDB_val(key, true)
+
+    if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], mdb_key, nil, op) == nil then
+        return false
+    else
+        return true
+    end
+end
+
+function cursor:move(op)
+    local op = op or lmdb.C.MDB_GET_CURRENT
+
+    if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], nil, nil, op) == nil then
+        return false
+    else
+        return true
+    end
+end
+
+
 function cursor:put(key, data, flag)
     local flag = flag or 0
-    local mdb_key = lmdb.MDB_val(key)
+    local mdb_key = lmdb.MDB_val(key, true)
     local mdb_data = lmdb.MDB_val(data)
     return lmdb.errcheck('mdb_cursor_put', self.mdb_cursor[0], mdb_key,mdb_data, flag)
 end
@@ -208,6 +234,19 @@ function cursor:del(flag)
     local flag = flag or 0
     return lmdb.errcheck('mdb_cursor_del', self.mdb_cursor[0], flag)
 end
+function cursor:next()
+    return self:move(lmdb.C.MDB_NEXT)
+end
+function cursor:prev()
+    return self:move(lmdb.C.MDB_PREV)
+end
+function cursor:first()
+    return self:move(lmdb.C.MDB_FIRST)
+end
+function cursor:last()
+    return self:move(lmdb.C.MDB_LAST)
+end
+
 
 function cursor:close()
     return lmdb.errcheck('mdb_cursor_close', self.mdb_cursor[0])

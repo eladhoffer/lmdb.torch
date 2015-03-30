@@ -8,8 +8,16 @@ local C = lmdb.C
 
 lmdb.verbose = true
 
-lmdb.serialize = torch.serialize
-lmdb.deserialize = torch.deserialize
+lmdb.serialize = function(x)
+    local val = torch.serialize(x)
+    local sz = #val
+    return val, sz
+end
+
+lmdb.deserialize =  function(val, sz)
+    local str = ffi.string(val, sz)
+    return torch.deserialize(str)
+end
 
 local errcheck = function(f, ...)
     local status = C[f](...)
@@ -22,20 +30,27 @@ end
 
 lmdb.errcheck = errcheck
 
-lmdb.MDB_val = function(x)
+lmdb.MDB_val = function(x, is_key) --key will always be turned to string
     local mdb_val = ffi.new('MDB_val[1]')
-    local value = lmdb.serialize(x)
-
-    mdb_val[0].mv_size = #value
+    local value
+    if is_key then
+        value = tostring(x)
+        mdb_val[0].mv_size = #value
+    else
+        value, mdb_val[0].mv_size = lmdb.serialize(x)
+    end
     mdb_val[0].mv_data = ffi.cast('void*', value)
-
     return mdb_val
 end
 
-lmdb.from_MDB_val = function(mdb_val)
-    local str = ffi.string(mdb_val[0].mv_data, tonumber(mdb_val[0].mv_size))
-    local x = lmdb.deserialize(str)
-    return x
+lmdb.from_MDB_val = function(mdb_val, is_key)
+    local sz = tonumber(mdb_val[0].mv_size)
+    local data = mdb_val[0].mv_data
+    if is_key then
+        return ffi.string(data, sz)
+    else
+        return lmdb.deserialize(data, sz)
+    end
 end
 
 

@@ -22,16 +22,15 @@ end
 local errcheck = function(f, ...)
     local status = C[f](...)
     if status and status ~= C.MDB_SUCCESS and lmdb.verbose then
-        print("Error in LMDB: ", ffi.string(C.mdb_strerror(status)))
-        return nil
+        print("Error in LMDB function " .. f .. " : ", ffi.string(C.mdb_strerror(status)))
     end
     return status
 end
 
 lmdb.errcheck = errcheck
 
-lmdb.MDB_val = function(x, is_key) --key will always be turned to string
-    local mdb_val = ffi.new('MDB_val[1]')
+lmdb.MDB_val = function(mdb_val, x, is_key) --key will always be turned to string
+    local mdb_val = mdb_val or ffi.new('MDB_val[1]')
     local value
     if is_key then
         value = tostring(x)

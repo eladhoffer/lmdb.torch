@@ -14,9 +14,19 @@ lmdb.serialize = function(x)
     return val, sz
 end
 
-lmdb.deserialize =  function(val, sz)
+lmdb.deserialize =  function(val, sz, binary)
+   if binary then
+      local ret = torch.ByteTensor(sz)
+       ffi.copy(ret:data(), val, sz)
+       return ret
+   end
     local str = ffi.string(val, sz)
-    return torch.deserialize(str)
+    local ok,ret = pcall(torch.deserialize, str)
+    if not ok then
+       ret = torch.ByteTensor(sz)
+       ffi.copy(ret:data(), val, sz)
+    end
+    return ret
 end
 
 local errcheck = function(f, ...)
@@ -42,13 +52,13 @@ lmdb.MDB_val = function(mdb_val, x, is_key) --key will always be turned to strin
     return mdb_val
 end
 
-lmdb.from_MDB_val = function(mdb_val, is_key)
+lmdb.from_MDB_val = function(mdb_val, is_key, binary)
     local sz = tonumber(mdb_val[0].mv_size)
     local data = mdb_val[0].mv_data
     if is_key then
         return ffi.string(data, sz)
     else
-        return lmdb.deserialize(data, sz)
+        return lmdb.deserialize(data, sz, binary)
     end
 end
 

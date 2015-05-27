@@ -58,9 +58,9 @@ function env:open()
     --    self.mdb_env = self.mdb_env[0]
     ffi.gc(self.mdb_env, destroy_env )
 
-    lmdb.errcheck('mdb_env_set_mapsize',self.mdb_env[0], self.MapSize) 
-    lmdb.errcheck('mdb_env_set_maxdbs',self.mdb_env[0], self.MaxDBs) 
-    lmdb.errcheck('mdb_env_set_maxreaders',self.mdb_env[0], self.MaxReaders) 
+    lmdb.errcheck('mdb_env_set_mapsize',self.mdb_env[0], self.MapSize)
+    lmdb.errcheck('mdb_env_set_maxdbs',self.mdb_env[0], self.MaxDBs)
+    lmdb.errcheck('mdb_env_set_maxreaders',self.mdb_env[0], self.MaxReaders)
     local path = paths.concat(self.Path)
     os.execute('mkdir -p "' .. path .. '"')
     lmdb.errcheck('mdb_env_open',self.mdb_env[0],path, self.flags, tonumber(self.Mode,8))
@@ -201,6 +201,19 @@ function cursor:get(op)
     end
 end
 
+function cursor:getData(op, binary)
+    local op = op or lmdb.C.MDB_GET_CURRENT
+    binary = binary or false
+    self.mdb_key = self.mdb_key or ffi.new('MDB_val[1]')
+    self.mdb_data = self.mdb_key or ffi.new('MDB_val[1]')
+
+    if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], self.mdb_key, self.mdb_data, op) == lmdb.C.MDB_NOTFOUND then
+        return nil
+    else
+        return lmdb.from_MDB_val(self.mdb_data, false, binary)
+    end
+end
+
 
 function cursor:set(key)
     local op  = lmdb.C.MDB_SET
@@ -257,7 +270,3 @@ function cursor:close()
     self.mdb_key = nil
     self.mdb_data = nil
 end
-
-
-
-

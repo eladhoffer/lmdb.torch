@@ -52,11 +52,6 @@ end
 function env:open()
     self.mdb_env = ffi.new('MDB_env *[1]')
     lmdb.errcheck('mdb_env_create',self.mdb_env)
-    local function destroy_env(x)
-        self:close()
-    end
-    --    self.mdb_env = self.mdb_env[0]
-    ffi.gc(self.mdb_env, destroy_env )
 
     lmdb.errcheck('mdb_env_set_mapsize',self.mdb_env[0], self.MapSize)
     lmdb.errcheck('mdb_env_set_maxdbs',self.mdb_env[0], self.MaxDBs)
@@ -203,7 +198,7 @@ end
 
 function cursor:getData(op, binary)
     local op = op or lmdb.C.MDB_GET_CURRENT
-    binary = binary or false
+    local binary = binary or false
     self.mdb_key = self.mdb_key or ffi.new('MDB_val[1]')
     self.mdb_data = self.mdb_key or ffi.new('MDB_val[1]')
 
@@ -228,7 +223,7 @@ end
 
 function cursor:move(op)
     local op = op or lmdb.C.MDB_GET_CURRENT
-
+    
     if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], nil, nil, op) == lmdb.C.MDB_NOTFOUND then
         return false
     else

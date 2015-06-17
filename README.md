@@ -50,12 +50,12 @@ close()
 ```lua
 require 'lmdb'
 
-local db= lmdb.env()
-db:open{
+local db= lmdb.env{
     Path = './testDB',
     Name = 'testDB'
 }
 
+db:open()
 print(db:stat()) -- Current status
 local txn = db:txn() --Write transaction
 local cursor = txn:cursor()
@@ -77,6 +77,7 @@ end
 
 reader:abort()
 
+db:close()
 ```
 
 

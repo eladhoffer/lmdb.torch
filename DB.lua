@@ -184,15 +184,17 @@ function cursor:__init(txn_obj)
     lmdb.errcheck('mdb_cursor_open',txn_obj.mdb_txn[0], txn_obj.mdb_dbi[0], self.mdb_cursor)
     self:first()
 end
+
 function cursor:get(op)
     local op = op or lmdb.C.MDB_GET_CURRENT
+    local binary = binary or false
     self.mdb_key = self.mdb_key or ffi.new('MDB_val[1]')
     self.mdb_data = self.mdb_data or ffi.new('MDB_val[1]')
 
     if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], self.mdb_key, self.mdb_data, op) == lmdb.C.MDB_NOTFOUND then
         return nil
     else
-        return lmdb.from_MDB_val(self.mdb_key, true), lmdb.from_MDB_val(self.mdb_data)
+        return lmdb.from_MDB_val(self.mdb_key, true), lmdb.from_MDB_val(self.mdb_data, false, binary)
     end
 end
 
@@ -223,7 +225,7 @@ end
 
 function cursor:move(op)
     local op = op or lmdb.C.MDB_GET_CURRENT
-    
+
     if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], nil, nil, op) == lmdb.C.MDB_NOTFOUND then
         return false
     else

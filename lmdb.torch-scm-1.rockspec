@@ -2,7 +2,7 @@ package = "lmdb.torch"
 version = "scm-1"
 
 source = {
-   url = "lmdb.torch",
+   url = "https://github.com/ehoffer/lmdb.torch.git",
    tag = "master"
 }
 
@@ -14,7 +14,7 @@ description = {
 }
 
 dependencies = {
-  
+
 }
 
 build = {

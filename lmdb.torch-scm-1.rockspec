@@ -1,13 +1,12 @@
-package = "lmdb.torch"
+package = "lmdb"
 version = "scm-1"
 
 source = {
-   url = "https://github.com/eladhoffer/lmdb.torch.git",
-   tag = "master"
+   url = "git://github.com/eladhoffer/lmdb.torch.git"
 }
 
 description = {
-   summary = '',
+   summary = 'LMDB wrappers for Torch',
    detailed = [[
    ]],
    homepage = "https://github.com/eladhoffer/lmdb.torch"

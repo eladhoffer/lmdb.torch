@@ -28,7 +28,6 @@ function env:__init(...)
     {arg='MaxReaders', type='number', help='', default = 3},
     {arg='Name', type='string', help='', default = 'Data'}
     )
-
     local flags = 0
     if args.NOTLS then flags = bit.bor(flags, C.MDB_NOTLS) end
     if args.NOSUBDIR then flags = bit.bor(flags, C.MDB_NOSUBDIR) end
@@ -131,7 +130,10 @@ function txn:commit()
 end
 
 function txn:abort()
+  if self.mdb_txn then
     lmdb.errcheck('mdb_txn_abort', self.mdb_txn[0])
+    self.mdb_txn = nil
+  end
 end
 
 function txn:reset()
@@ -260,10 +262,10 @@ end
 
 
 function cursor:close()
-    if self.mdb_val then
-        lmdb.errcheck('mdb_cursor_close', self.mdb_cursor[0])
-        self.mdb_cursor = nil
-    end
+  if self.mdb_cursor then
+    lmdb.errcheck('mdb_cursor_close', self.mdb_cursor[0])
+    self.mdb_cursor = nil
+  end
     self.mdb_key = nil
     self.mdb_data = nil
 end

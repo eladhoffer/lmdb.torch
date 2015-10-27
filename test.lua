@@ -1,29 +1,31 @@
 require 'lmdb'
-require 'image'
-require 'trepl'
 
-db= lmdb.env{
+local db= lmdb.env{
     Path = './testDB',
     Name = 'testDB'
 }
 
 db:open()
+print(db:stat()) -- Current status
+local num = 1000
+local txn = db:txn() --Write transaction
+local cursor = txn:cursor()
+local x=torch.rand(num,100)
 
-print(db:stat())
-txn = db:txn()
-x=torch.rand(3,256,256):byte()
-for i=1,10 do
-    txn:put(i,x)
+-------Write-------
+for i=1,num do
+    txn:put(i,x[i])
 end
-txn:put(14,image.lena())
 txn:commit()
 
-print(db:stat())
-local read_txn = db:txn(true)
-local cursor = read_txn:cursor()
-cursor:set(14)
-local key,y = cursor:get()
-image.display(y)
+local reader = db:txn(true) --Read-only transaction
+local y = torch.Tensor(num,100)
 
-read_txn:abort()
+-------Read-------
+for i=1,num do
+    y[i] = reader:get(i)
+end
+
+reader:abort()
+print('Difference: ', torch.dist(x,y))
 db:close()

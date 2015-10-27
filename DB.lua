@@ -102,6 +102,13 @@ local txn = torch.class('lmdb.txn')
 
 function txn:__init(env_obj, rdonly, parent_txn)
     self.mdb_txn = ffi.new('MDB_txn *[1]')
+    self.pointer_record = {}
+
+    self.__MDB_val = function(...)
+      local mdb_val, p = lmdb.MDB_val(...)
+      self.pointer_record[#self.pointer_record + 1] = p
+      return mdb_val
+    end
     local function destroy_txn(x)
         self:abort()
     end
@@ -127,6 +134,7 @@ end
 
 function txn:commit()
     lmdb.errcheck('mdb_txn_commit', self.mdb_txn[0])
+    self.pointer_record = {}
 end
 
 function txn:abort()
@@ -134,6 +142,7 @@ function txn:abort()
     lmdb.errcheck('mdb_txn_abort', self.mdb_txn[0])
     self.mdb_txn = nil
   end
+  self.pointer_record = {}
 end
 
 function txn:reset()
@@ -148,8 +157,8 @@ end
 
 function txn:put(key, data, flag)
     local flag = flag or 0
-    self.mdb_key = lmdb.MDB_val(self.mdb_key, key, true) --Keys are always strings
-    self.mdb_data = lmdb.MDB_val(self.mdb_data, data)
+    self.mdb_key = self.__MDB_val(self.mdb_key, key, true) --Keys are always strings
+    self.mdb_data = self.__MDB_val(self.mdb_data, data)
     return lmdb.errcheck('mdb_put', self.mdb_txn[0], self.mdb_dbi[0], self.mdb_key, self.mdb_data, flag)
 end
 
@@ -158,7 +167,7 @@ function txn:cursor()
 end
 
 function txn:get(key)
-    self.mdb_key = lmdb.MDB_val(self.mdb_key, key, true)
+    self.mdb_key = self.__MDB_val(self.mdb_key, key, true)
     self.mdb_data = self.mdb_data or ffi.new('MDB_val[1]')
     if lmdb.errcheck('mdb_get', self.mdb_txn[0], self.mdb_dbi[0], self.mdb_key,self.mdb_data) == lmdb.C.MDB_NOTFOUND then
         return nil
@@ -177,7 +186,7 @@ local cursor = torch.class('lmdb.cursor')
 
 function cursor:__init(txn_obj)
     self.mdb_cursor = ffi.new('MDB_cursor *[1]')
-
+    self.__MDB_val = txn_obj.__MDB_val
     local function destroy_cursor(x)
         self:close()
     end
@@ -216,7 +225,7 @@ end
 
 function cursor:set(key)
     local op  = lmdb.C.MDB_SET
-    self.mdb_key = lmdb.MDB_val(self.mdb_key, key, true)
+    self.mdb_key = self.__MDB_val(self.mdb_key, key, true)
 
     if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], self.mdb_key, nil, op) == lmdb.C.MDB_NOTFOUND then
         return false
@@ -238,8 +247,8 @@ end
 
 function cursor:put(key, data, flag)
     local flag = flag or 0
-    self.mdb_key = lmdb.MDB_val(self.mdb_key, key, true)
-    self.mdb_data = lmdb.MDB_val(self.mdb_data, data)
+    self.mdb_key = self.__MDB_val(self.mdb_key, key, true)
+    self.mdb_data = self.__MDB_val(self.mdb_data, data)
     return lmdb.errcheck('mdb_cursor_put', self.mdb_cursor[0], self.mdb_key, self.mdb_data, flag)
 end
 

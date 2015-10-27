@@ -49,7 +49,7 @@ lmdb.MDB_val = function(mdb_val, x, is_key) --key will always be turned to strin
         value, mdb_val[0].mv_size = lmdb.serialize(x)
     end
     mdb_val[0].mv_data = ffi.cast('void*', value)
-    return mdb_val
+    return mdb_val, value
 end
 
 lmdb.from_MDB_val = function(mdb_val, is_key, binary)

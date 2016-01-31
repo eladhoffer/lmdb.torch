@@ -166,13 +166,14 @@ function txn:cursor()
     return lmdb.cursor(self)
 end
 
-function txn:get(key)
+function txn:get(key, binary)
+    local binary = binary or false
     self.mdb_key = self.__MDB_val(self.mdb_key, key, true)
     self.mdb_data = self.mdb_data or ffi.new('MDB_val[1]')
     if lmdb.errcheck('mdb_get', self.mdb_txn[0], self.mdb_dbi[0], self.mdb_key,self.mdb_data) == lmdb.C.MDB_NOTFOUND then
         return nil
     else
-        return lmdb.from_MDB_val(self.mdb_data)
+        return lmdb.from_MDB_val(self.mdb_data, false, binary)
     end
 end
 

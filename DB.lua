@@ -134,6 +134,7 @@ end
 
 function txn:commit()
     lmdb.errcheck('mdb_txn_commit', self.mdb_txn[0])
+    self.mdb_txn = nil
     self.pointer_record = {}
 end
 

@@ -198,7 +198,7 @@ function cursor:__init(txn_obj)
     self:first()
 end
 
-function cursor:get(op)
+function cursor:get(op, binary)
     local op = op or lmdb.C.MDB_GET_CURRENT
     local binary = binary or false
     self.mdb_key = self.mdb_key or ffi.new('MDB_val[1]')

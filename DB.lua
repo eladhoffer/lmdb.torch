@@ -215,7 +215,7 @@ function cursor:getData(op, binary)
     local op = op or lmdb.C.MDB_GET_CURRENT
     local binary = binary or false
     self.mdb_key = self.mdb_key or ffi.new('MDB_val[1]')
-    self.mdb_data = self.mdb_key or ffi.new('MDB_val[1]')
+    self.mdb_data = self.mdb_data or ffi.new('MDB_val[1]')
 
     if lmdb.errcheck('mdb_cursor_get', self.mdb_cursor[0], self.mdb_key, self.mdb_data, op) == lmdb.C.MDB_NOTFOUND then
         return nil

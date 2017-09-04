@@ -1,9 +1,9 @@
-#LMDB for Torch
+# LMDB for Torch
 Uses ffi to wrap LMDB (http://symas.com/mdb/) functions, and Torch to serialize/deserialize objects (can be replaced by changing lmdb.[de]serialize).
 
-##Available functions:
+## Available functions:
 
-###lmdb.env()
+### lmdb.env()
 
 ```lua
 open{
@@ -27,7 +27,7 @@ txn(rdonly, parent_txn)
 reader_check()
 stat()
 ```
-###lmdb.txn(env_obj, rdonly, parent_txn)
+### lmdb.txn(env_obj, rdonly, parent_txn)
 ```lua
 dbi_open(name, flags)
 commit()
@@ -38,7 +38,7 @@ put(key, data, flag)
 get(key)
 cursor() 
 ```
-###lmdb.cursor()
+### lmdb.cursor()
 ```lua
 get(op)
 put(key, data, flag)
@@ -46,7 +46,7 @@ del(flag)
 close()
 ```
 
-##Usage Example
+## Usage Example
 ```lua
 require 'lmdb'
 
